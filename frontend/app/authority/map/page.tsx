@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 
 type Complaint = {
@@ -22,6 +22,7 @@ const riskColor = (risk: string) => {
 export default function AuthorityMap() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const mapRef = useRef<any>(null);
 
   useEffect(() => {
     fetch('/api/map-complaints')
@@ -29,18 +30,18 @@ export default function AuthorityMap() {
       .then((data) => {
         setComplaints(data.complaints || []);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     if (loading || complaints.length === 0) return;
     if (typeof window === "undefined") return;
 
-    // Remove any existing map instance first
-    const container = document.getElementById("map") as any;
-    if (container && container._leaflet_id) {
-      container._leaflet_id = null;
-      container.innerHTML = "";
+    // Destroy any existing map instance before creating a new one
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
     }
 
     import("leaflet").then((L) => {
@@ -53,6 +54,7 @@ export default function AuthorityMap() {
       }
 
       const map = L.map("map").setView([20.5937, 78.9629], 5);
+      mapRef.current = map;
 
       // Light OpenStreetMap tiles
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
