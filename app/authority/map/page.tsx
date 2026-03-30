@@ -36,6 +36,13 @@ export default function AuthorityMap() {
     if (loading || complaints.length === 0) return;
     if (typeof window === "undefined") return;
 
+    // Remove any existing map instance first
+    const container = document.getElementById("map") as any;
+    if (container && container._leaflet_id) {
+      container._leaflet_id = null;
+      container.innerHTML = "";
+    }
+
     import("leaflet").then((L) => {
       if (!document.getElementById("leaflet-css")) {
         const link = document.createElement("link");
@@ -45,13 +52,11 @@ export default function AuthorityMap() {
         document.head.appendChild(link);
       }
 
-      const container = document.getElementById("map") as HTMLElement & { _leaflet_id?: number };
-      if (container._leaflet_id) return;
-
       const map = L.map("map").setView([20.5937, 78.9629], 5);
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution: "© OpenStreetMap © CARTO",
+      // Light OpenStreetMap tiles
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
         maxZoom: 19,
       }).addTo(map);
 
