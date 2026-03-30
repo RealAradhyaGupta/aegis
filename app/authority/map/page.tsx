@@ -1,21 +1,17 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const complaints = [
-  { id: "RPT-001", type: "Harassment", location: "Andheri, Mumbai", lat: 19.1136, lng: 72.8697, risk: "High" },
-  { id: "RPT-002", type: "Poor Lighting", location: "Dharavi, Mumbai", lat: 19.0422, lng: 72.8538, risk: "Medium" },
-  { id: "RPT-003", type: "Vandalism", location: "Bandra, Mumbai", lat: 19.0596, lng: 72.8295, risk: "Low" },
-  { id: "RPT-004", type: "Suspicious Activity", location: "Connaught Place, Delhi", lat: 28.6315, lng: 77.2167, risk: "High" },
-  { id: "RPT-005", type: "Harassment", location: "Lajpat Nagar, Delhi", lat: 28.5700, lng: 77.2433, risk: "High" },
-  { id: "RPT-006", type: "Poor Lighting", location: "Rohini, Delhi", lat: 28.7041, lng: 77.1025, risk: "Medium" },
-  { id: "RPT-007", type: "Vandalism", location: "Koramangala, Bangalore", lat: 12.9352, lng: 77.6245, risk: "Low" },
-  { id: "RPT-008", type: "Suspicious Activity", location: "Whitefield, Bangalore", lat: 12.9698, lng: 77.7500, risk: "High" },
-  { id: "RPT-009", type: "Harassment", location: "T. Nagar, Chennai", lat: 13.0418, lng: 80.2341, risk: "High" },
-  { id: "RPT-010", type: "Poor Lighting", location: "Velachery, Chennai", lat: 12.9815, lng: 80.2180, risk: "Medium" },
-  { id: "RPT-011", type: "Vandalism", location: "Banjara Hills, Hyderabad", lat: 17.4156, lng: 78.4347, risk: "Low" },
-  { id: "RPT-012", type: "Suspicious Activity", location: "Secunderabad, Hyderabad", lat: 17.4399, lng: 78.4983, risk: "High" },
-];
+type Complaint = {
+  id: string;
+  type: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  risk: string;
+  status: string;
+  time: string;
+};
 
 const riskColor = (risk: string) => {
   if (risk === "High") return "#ef4444";
@@ -24,7 +20,20 @@ const riskColor = (risk: string) => {
 };
 
 export default function AuthorityMap() {
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    fetch('/api/map-complaints')
+      .then((res) => res.json())
+      .then((data) => {
+        setComplaints(data.complaints || []);
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (loading || complaints.length === 0) return;
     if (typeof window === "undefined") return;
 
     import("leaflet").then((L) => {
@@ -39,7 +48,6 @@ export default function AuthorityMap() {
       const container = document.getElementById("map") as HTMLElement & { _leaflet_id?: number };
       if (container._leaflet_id) return;
 
-      // Centred on India
       const map = L.map("map").setView([20.5937, 78.9629], 5);
 
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
@@ -48,13 +56,13 @@ export default function AuthorityMap() {
       }).addTo(map);
 
       complaints.forEach((c) => {
-        const marker = L.circleMarker([c.lat, c.lng], {
-          radius: 10,
+        const marker = L.circleMarker([Number(c.latitude), Number(c.longitude)], {
+          radius: 8,
           fillColor: riskColor(c.risk),
           color: "#fff",
-          weight: 2,
+          weight: 1.5,
           opacity: 1,
-          fillOpacity: 0.85,
+          fillOpacity: 0.8,
         }).addTo(map);
 
         marker.bindPopup(`
@@ -62,19 +70,23 @@ export default function AuthorityMap() {
             <strong style="color: #111">${c.id}</strong><br/>
             <span style="color: #555">${c.type}</span><br/>
             <span style="color: #555">${c.location}</span><br/>
+            <span style="color: #555">${c.time}</span><br/>
             <span style="color: ${riskColor(c.risk)}; font-weight: bold;">${c.risk} Risk</span>
           </div>
         `);
       });
     });
-  }, []);
+  }, [loading, complaints]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AEGIS Command Portal</h1>
-          <p className="text-gray-400 mt-1 text-sm">Live Incident Map — India</p>
+          <p className="text-gray-400 mt-1 text-sm">
+            Live Incident Map — India
+            {!loading && <span className="ml-2 text-blue-400">({complaints.length} incidents loaded)</span>}
+          </p>
         </div>
         <Link
           href="/authority/dashboard"
@@ -91,8 +103,17 @@ export default function AuthorityMap() {
         <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Low Risk</div>
       </div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="w-full h-[600px] rounded-xl border border-gray-800 flex items-center justify-center text-gray-400">
+          Loading map data from database...
+        </div>
+      )}
+
       {/* Map */}
-      <div id="map" className="w-full h-[600px] rounded-xl overflow-hidden border border-gray-800" />
+      {!loading && (
+        <div id="map" className="w-full h-[600px] rounded-xl overflow-hidden border border-gray-800" />
+      )}
     </div>
   );
 }
