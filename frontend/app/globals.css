@@ -1,26 +1,192 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0F172A;
+  --foreground: #F8FAFC;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* AEGIS Design System Colours */
+  --color-aegis-navy: #0F172A;
+  --color-aegis-surface: #1E293B;
+  --color-aegis-card: #334155;
+  --color-aegis-text: #F8FAFC;
+  --color-aegis-muted: #94A3B8;
+  --color-aegis-accent: #3B82F6;
+  --color-aegis-danger: #EF4444;
+  --color-aegis-safe: #22C55E;
+  --color-aegis-warning: #F59E0B;
+  --color-aegis-border: #475569;
+
+  /* AEGIS Typography */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* AEGIS Design System — shared component classes */
+
+.aegis-card {
+  background-color: #1E293B;
+  border: 1px solid #475569;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.aegis-btn-primary {
+  background-color: #3B82F6;
+  color: #ffffff;
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 20px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.aegis-btn-primary:hover {
+  background-color: #2563EB;
+}
+
+.aegis-btn-danger {
+  background-color: #EF4444;
+  color: #ffffff;
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 20px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.aegis-btn-danger:hover {
+  background-color: #DC2626;
+}
+
+.aegis-btn-outline {
+  background-color: transparent;
+  color: #F8FAFC;
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 20px;
+  border: 1px solid #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aegis-btn-outline:hover {
+  border-color: #F8FAFC;
+}
+
+.aegis-input {
+  background-color: #334155;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  height: 44px;
+  color: #F8FAFC;
+  font-size: 14px;
+  padding: 0 16px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.aegis-input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.aegis-input::placeholder {
+  color: #94A3B8;
+}
+
+.aegis-label {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94A3B8;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.aegis-heading {
+  font-size: 24px;
+  font-weight: 600;
+  color: #F8FAFC;
+  line-height: 1.3;
+}
+
+.aegis-badge-safe {
+  background-color: #22C55E;
+  color: #173404;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.aegis-badge-warning {
+  background-color: #F59E0B;
+  color: #412402;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.aegis-badge-danger {
+  background-color: #EF4444;
+  color: #501313;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.aegis-badge-reviewing {
+  background-color: #3B82F6;
+  color: #042C53;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.aegis-divider {
+  border: none;
+  border-top: 1px solid #475569;
+  margin: 20px 0;
+}
+
+.aegis-monospace {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #3B82F6;
+  word-break: break-all;
+  background-color: #0F172A;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 12px 16px;
+  line-height: 1.6;
 }
