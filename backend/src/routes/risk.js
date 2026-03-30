@@ -1,46 +1,45 @@
 const express = require('express');
 const router = express.Router();
-const riskEngine = require('../services/riskEngine');
+const { computeRisk } = require('../services/riskEngine');
 
-// GET /api/risk/heatmap - Get all complaint points for the heatmap
-router.get('/heatmap', async (req, res) => {
+// GET /risk?north=&south=&east=&west=
+router.get('/', async (req, res) => {
     try {
-        const data = await riskEngine.getHeatmapData();
-        res.json({ success: true, points: data });
-    } catch (err) {
-        console.error('Heatmap error:', err);
-        res.status(500).json({ error: 'Failed to fetch heatmap data' });
-    }
-});
+        const { north, south, east, west } = req.query;
 
-// GET /api/risk/score - Get risk score for a specific location
-router.get('/score', async (req, res) => {
-    try {
-        const { lat, lng, radius } = req.query;
-
-        if (!lat || !lng) {
+        if (!north || !south || !east || !west) {
             return res.status(400).json({
-                error: 'lat and lng are required'
+                error: 'Missing required query params: north, south, east, west'
             });
         }
 
-        const score = await riskEngine.computeZoneRisk(
-            parseFloat(lat),
-            parseFloat(lng),
-            parseInt(radius) || 500
-        );
+        const n = parseFloat(north);
+        const s = parseFloat(south);
+        const e = parseFloat(east);
+        const w = parseFloat(west);
 
-        res.json({
-            success: true,
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lng),
-            risk_score: score,
-            label: score > 70 ? 'high' : score > 40 ? 'medium' : 'low'
+        if ([n, s, e, w].some(isNaN)) {
+            return res.status(400).json({ error: 'All bounding box values must be numbers' });
+        }
+
+        if (n <= s) {
+            return res.status(400).json({ error: 'north must be greater than south' });
+        }
+
+        if (e <= w) {
+            return res.status(400).json({ error: 'east must be greater than west' });
+        }
+
+        const zones = await computeRisk(n, s, e, w);
+
+        return res.status(200).json({
+            zone_count: zones.length,
+            zones
         });
 
-    } catch (err) {
-        console.error('Score error:', err);
-        res.status(500).json({ error: 'Failed to compute risk score' });
+    } catch (error) {
+        console.error('GET /risk error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 

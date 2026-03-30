@@ -1,84 +1,42 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/connection');
-const evidenceService = require('../services/evidenceService');
+const { getSafeRoute } = require('../services/routingService');
 
-// POST /api/reports - Submit a new safety report
-router.post('/', async (req, res) => {
-    try {
-        const {
-            type,
-            description,
-            latitude,
-            longitude,
-            location,
-            risk_level
-        } = req.body;
-
-        // Generate a unique report ID
-        const reportId = 'RPT-' + Date.now();
-
-        // Hash the report data for evidence integrity
-        const hash = evidenceService.generateHash({
-            reportId,
-            type,
-            description,
-            latitude,
-            longitude,
-            timestamp: new Date().toISOString()
-        });
-
-        // Generate proof of originality certificate
-        const certificateId = evidenceService.generateCertificateId();
-
-        // Save complaint to database
-        const result = await db.query(
-            `INSERT INTO complaints 
-                (report_id, type, description, latitude, longitude,
-                 geom, location, risk_level, evidence_hash, 
-                 certificate_id, reported_at)
-             VALUES ($1, $2, $3, $4, $5,
-                 ST_SetSRID(ST_MakePoint($5, $4), 4326),
-                 $6, $7, $8, $9, NOW())
-             RETURNING *`,
-            [reportId, type, description, latitude, longitude,
-                location, risk_level, hash, certificateId]
-        );
-
-        const complaint = result.rows[0];
-
-        // Save to evidence ledger
-        await evidenceService.saveToLedger(
-            complaint.id,
-            hash,
-            certificateId,
-            { reportId, type, latitude, longitude }
-        );
-
-        res.status(201).json({
-            success: true,
-            report_id: reportId,
-            certificate_id: certificateId,
-            evidence_hash: hash,
-            message: 'Report submitted and evidence chain created'
-        });
-
-    } catch (err) {
-        console.error('Report error:', err);
-        res.status(500).json({ error: 'Failed to submit report' });
-    }
-});
-
-// GET /api/reports - Get all reports
+// GET /route?origin_lat=&origin_lng=&dest_lat=&dest_lng=
 router.get('/', async (req, res) => {
     try {
-        const result = await db.query(
-            `SELECT * FROM complaints ORDER BY created_at DESC LIMIT 100`
-        );
-        res.json({ success: true, reports: result.rows });
-    } catch (err) {
-        console.error('Fetch error:', err);
-        res.status(500).json({ error: 'Failed to fetch reports' });
+        const { origin_lat, origin_lng, dest_lat, dest_lng } = req.query;
+
+        if (!origin_lat || !origin_lng || !dest_lat || !dest_lng) {
+            return res.status(400).json({
+                error: 'Missing required query params: origin_lat, origin_lng, dest_lat, dest_lng'
+            });
+        }
+
+        const oLat = parseFloat(origin_lat);
+        const oLng = parseFloat(origin_lng);
+        const dLat = parseFloat(dest_lat);
+        const dLng = parseFloat(dest_lng);
+
+        if ([oLat, oLng, dLat, dLng].some(isNaN)) {
+            return res.status(400).json({ error: 'All coordinates must be numbers' });
+        }
+
+        if (oLat < -90 || oLat > 90 || dLat < -90 || dLat > 90) {
+            return res.status(400).json({ error: 'Latitudes must be between -90 and 90' });
+        }
+
+        if (oLng < -180 || oLng > 180 || dLng < -180 || dLng > 180) {
+            return res.status(400).json({ error: 'Longitudes must be between -180 and 180' });
+        }
+
+        const routes = await getSafeRoute(oLat, oLng, dLat, dLng);
+
+        return res.status(200).json(routes);
+
+    } catch (error) {
+        console.error('GET /route error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
