@@ -38,19 +38,28 @@ export default function AuthorityMap() {
     if (loading || complaints.length === 0) return;
     if (typeof window === "undefined") return;
 
-    // Destroy any existing map instance before creating a new one
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
+    let isMounted = true;
 
     import("leaflet").then((L) => {
+      if (!isMounted) return;
+
       if (!document.getElementById("leaflet-css")) {
         const link = document.createElement("link");
         link.id = "leaflet-css";
         link.rel = "stylesheet";
         link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
         document.head.appendChild(link);
+      }
+
+      // Prevent exact exact race conditions on hot reload
+      const container = L.DomUtil.get("map");
+      if (container != null) {
+        (container as any)._leaflet_id = null;
+      }
+
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
       const map = L.map("map").setView([20.5937, 78.9629], 5);
@@ -83,6 +92,14 @@ export default function AuthorityMap() {
         `);
       });
     });
+
+    return () => {
+      isMounted = false;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
   }, [loading, complaints]);
 
   return (
